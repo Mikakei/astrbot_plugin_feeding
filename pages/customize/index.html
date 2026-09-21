@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>角色与回复定制</title><link rel="stylesheet" href="./style.css"></head>
+<body><main><header><span class="eyebrow">身临其境的投喂</span><h1>角色与回复定制</h1><p>把角色的样子与回应方式，调整成你想要的感觉。</p></header>
+<form id="editor"><fieldset id="fields" disabled>
+<section><div class="section-title"><h2>角色参考图</h2><span>1 张主图 · 1 张可选辅助图</span></div><p>画风和人物比例以主图为准，辅助图补充外观细节。每张不超过 10MB、2000 万像素。</p><div class="grid" id="references"></div></section>
+<section><h2>角色补充提示词</h2><p id="character-help">描述希望保留的外观特征或绘图要求。留空则依据参考图生成。</p><label class="sr-only" for="character_prompt">角色补充提示词</label><textarea id="character_prompt" rows="9" maxlength="4000" aria-describedby="character-help" placeholder="例如：保留胸前徽章，使用柔和的室内光线。"></textarea><output data-count="character_prompt"></output></section>
+<section><h2>点评风格</h2><p id="review-help">人格直接读取触发会话的 AstrBot 设置。这里可以补充表达习惯、篇幅和语气偏好；留空则遵循原有人格。</p><label class="sr-only" for="review_prompt">点评风格补充</label><textarea id="review_prompt" rows="12" maxlength="4000" aria-describedby="review-help" placeholder="例如：回应简洁，结合食物细节表达感受，不重复固定开场。"></textarea><output data-count="review_prompt"></output></section>
+<section><h2>固定回复</h2><p>接收、排队等提示直接发送，不调用模型。拒绝或完成回复仅在模型未返回点评时使用。</p><div class="grid" id="replies"></div><button type="button" id="defaults" class="secondary">将固定回复重置为通用文案</button></section>
+</fieldset><footer><div id="status" role="status" aria-live="polite">正在载入…</div><div class="actions"><button type="button" id="reload" class="secondary">重新载入</button><button type="submit" id="save" disabled>保存修改</button></div></footer></form><p class="footnote">保存后对新投喂生效，不修改 AstrBot 人格。服务连接、权限与队列仍在插件常规配置中设置。</p></main><script type="module" src="./app.js"></script></body></html>

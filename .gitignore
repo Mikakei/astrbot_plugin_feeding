@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+assets/
+*.zip
+.env.*
+!.env.example
+*.log
+.pytest_cache/
+.ruff_cache/
+inputs/
+outputs/
+backups/
+tasks.json

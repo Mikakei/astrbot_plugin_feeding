@@ -1,0 +1,206 @@
+{
+  "customization_page": {
+    "type": "string",
+    "default": "请前往左侧插件页面 → 身临其境的投喂 → 角色与回复定制",
+    "description": "角色与回复定制入口",
+    "hint": "参考图、角色提示词、点评风格和固定回复已集中到插件页面。",
+    "invisible": true
+  },
+  "chibi_reference": {
+    "type": "file",
+    "description": "角色主参考图（必填，1张）",
+    "default": [],
+    "file_types": [
+      "png",
+      "jpg",
+      "jpeg",
+      "webp"
+    ],
+    "hint": "上传清晰的角色图片，作为外观、服装、画风和人物比例的主要依据。只保留一张并保存；不超过10MB、2000万像素。",
+    "invisible": true
+  },
+  "turnaround_reference": {
+    "type": "file",
+    "description": "角色辅助参考图（可选，1张）",
+    "default": [],
+    "file_types": [
+      "png",
+      "jpg",
+      "jpeg",
+      "webp"
+    ],
+    "hint": "可上传同一角色的另一张图片，补充主图未展示的外观细节；不需要时留空。最多一张，不超过10MB、2000万像素。",
+    "invisible": true
+  },
+  "admin_only": {
+    "description": "仅允许 AstrBot 管理员使用投喂",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后，只有通过 AstrBot 原生权限检查的管理员可投喂；关闭后不再增加插件权限限制。群聊白名单由 AstrBot 统一管理。"
+  },
+  "image_provider_id": {
+    "description": "绘图连接提供商（读取 AstrBot 已配置的提供商）",
+    "type": "string",
+    "default": "",
+    "hint": "完整复用所选提供商的地址和密钥；该连接须支持 Images edits，生图模型在下方另选。",
+    "_special": "select_provider"
+  },
+  "image_model": {
+    "description": "生图模型",
+    "type": "string",
+    "default": "gpt-image-1.5",
+    "options": [
+      "gpt-image-1.5"
+    ],
+    "hint": "自动读取当前 API 的生图模型列表，选择后保存。模型须支持参考图编辑。",
+    "obvious_hint": true
+  },
+  "vision_provider_id": {
+    "description": "食物识别提供商（留空跟随当前会话）",
+    "type": "string",
+    "default": "",
+    "hint": "留空跟随触发会话的当前聊天提供商；也可指定支持图片输入的提供商。人格仍沿用当前会话。",
+    "_special": "select_provider"
+  },
+  "image_size": {
+    "description": "生图请求尺寸",
+    "type": "string",
+    "default": "512x512",
+    "options": [
+      "512x512",
+      "1024x1024"
+    ],
+    "hint": "较小尺寸用于速度优先。是否支持或严格遵守尺寸取决于上游 API；实际出图可能不同。"
+  },
+  "image_quality": {
+    "description": "生图质量",
+    "type": "string",
+    "default": "low",
+    "options": [
+      "low",
+      "medium",
+      "high",
+      "auto"
+    ],
+    "hint": "low 为速度优先；模型保持原选择。"
+  },
+  "image_timeout": {
+    "description": "绘图超时秒数",
+    "type": "int",
+    "default": 300
+  },
+  "concurrency": {
+    "description": "全局同时处理任务数（固定为1）",
+    "type": "int",
+    "default": 1,
+    "hint": "所有群聊共用单任务队列。即使填写其他值，仍按1执行，避免并发请求生图服务。"
+  },
+  "queue_size": {
+    "description": "额外等待任务数（0至20）",
+    "type": "int",
+    "default": 3
+  },
+  "cooldown_seconds": {
+    "description": "每位用户两次投喂的间隔秒数",
+    "type": "int",
+    "default": 60
+  },
+  "advanced": {
+    "description": "高级选项",
+    "type": "object",
+    "hint": "仅在需要独立图像 API 时配置。两项同时留空则使用上方选定的 AstrBot 提供商。",
+    "items": {
+      "image_base_url": {
+        "description": "自定义图像 API 地址（可选）",
+        "type": "string",
+        "default": "",
+        "hint": "自定义连接必须同时填写地址和密钥；两项同时清空才复用所选 AstrBot 提供商。"
+      },
+      "image_api_key": {
+        "description": "自定义图像 API 密钥（可选）",
+        "type": "string",
+        "default": "",
+        "hint": "仅用于上方自定义地址，不会从其他提供商补齐密钥。"
+      }
+    }
+  },
+  "image_base_url": {
+    "description": "旧连接配置（自动迁移）",
+    "type": "string",
+    "default": "",
+    "invisible": true
+  },
+  "image_api_key": {
+    "description": "旧连接配置（自动迁移）",
+    "type": "string",
+    "default": "",
+    "invisible": true
+  },
+  "reference_migration_done": {
+    "type": "bool",
+    "default": false,
+    "invisible": true,
+    "description": "已有实例参考图迁移标记"
+  },
+  "character_prompt": {
+    "type": "text",
+    "description": "角色补充提示词（可选）",
+    "default": "",
+    "hint": "补充希望保留的角色特征或绘图要求，最多4000字。留空则依据参考图生成；对话人格沿用AstrBot当前会话设置。",
+    "invisible": true
+  },
+  "review_prompt": {
+    "type": "text",
+    "default": "",
+    "description": "review_prompt",
+    "invisible": true
+  },
+  "reply_received": {
+    "type": "text",
+    "default": "已收到，我先看看。",
+    "description": "reply_received",
+    "invisible": true
+  },
+  "reply_multiple": {
+    "type": "text",
+    "default": "这次先看第一张。",
+    "description": "reply_multiple",
+    "invisible": true
+  },
+  "reply_pending": {
+    "type": "text",
+    "default": "上一份还在处理中，请稍等。",
+    "description": "reply_pending",
+    "invisible": true
+  },
+  "reply_busy": {
+    "type": "text",
+    "default": "当前有些忙，请稍后再来。",
+    "description": "reply_busy",
+    "invisible": true
+  },
+  "reply_cooldown": {
+    "type": "text",
+    "default": "请稍等片刻再投喂。",
+    "description": "reply_cooldown",
+    "invisible": true
+  },
+  "reply_malicious": {
+    "type": "text",
+    "default": "这份投喂不合适，我不接受。",
+    "description": "reply_malicious",
+    "invisible": true
+  },
+  "reply_non_food": {
+    "type": "text",
+    "default": "暂时无法确认这是什么，请补充说明。",
+    "description": "reply_non_food",
+    "invisible": true
+  },
+  "reply_done": {
+    "type": "text",
+    "default": "收到这份投喂了。",
+    "description": "reply_done",
+    "invisible": true
+  }
+}

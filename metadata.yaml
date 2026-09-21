@@ -1,0 +1,9 @@
+name: astrbot_plugin_feeding
+display_name: 身临其境的投喂
+desc: 发送食物图片，结合用户角色设定图生成 进食图片，并沿用当前会话人格点评。
+version: v1.0.0
+author: Mikakei
+repo: https://github.com/Mikakei/astrbot_plugin_feeding
+astrbot_version: '>=4.28.1'
+support_platforms:
+  - aiocqhttp
