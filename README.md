@@ -118,7 +118,7 @@ python -m pip install -r data/plugins/astrbot_plugin_feeding/requirements.txt
 
 升级前备份插件配置和角色参考图；手动升级只替换插件源码，保留 `data/config/astrbot_plugin_feeding_config.json` 与 `data/plugin_data/astrbot_plugin_feeding/`。
 
-## 🚀 五分钟配置
+## 🚀 如何配置
 
 ### 1. 选择服务
 
