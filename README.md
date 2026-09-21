@@ -62,7 +62,7 @@
 
 ### 方式二：通过仓库链接安装
 
-1. 复制仓库地址：`https://github.com/Mikakei/astrbot_plugin_feeding`（私有阶段需要仓库访问权限）。
+1. 复制仓库地址：`https://github.com/Mikakei/astrbot_plugin_feeding`。
 2. 打开 AstrBot 管理面板的 **插件** 页面，找到安装插件入口，选择通过链接安装（不同版本的按钮名称可能略有不同）。
 3. 粘贴仓库地址，等待下载及依赖安装完成。
 4. 在已安装列表中确认出现 **身临其境的投喂**，并保持启用。
