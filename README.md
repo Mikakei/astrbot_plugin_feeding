@@ -1,13 +1,13 @@
 <div align="center">
-  <img src="logo.png" width="144" alt="身临其境的投喂" />
+  <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/logo.png" width="144" alt="身临其境的投喂" />
   <h1>🍽️ 身临其境的投喂</h1>
   <p>把今天吃的东西分享给你的角色。</p>
   <p>
-    <img src="docs/images/badge-framework.svg" alt="Framework: AstrBot" />
-    <img src="docs/images/badge-version.svg" alt="Version: v1.0.0" />
-    <a href="LICENSE"><img src="docs/images/badge-license.svg" alt="License: AGPL-3.0" /></a>
-    <img src="docs/images/badge-astrbot.svg" alt="AstrBot: ≥ 4.28.1" />
-    <img src="docs/images/badge-platform.svg" alt="Platform: OneBot v11" />
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-framework.svg" alt="Framework: AstrBot" />
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.0.0" />
+    <a href="https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/LICENSE"><img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-license.svg" alt="License: AGPL-3.0" /></a>
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-astrbot.svg" alt="AstrBot: ≥ 4.28.1" />
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-platform.svg" alt="Platform: OneBot v11" />
   </p>
 </div>
 
@@ -21,14 +21,14 @@
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/normal-bbq-demo.png" alt="烤肉投喂实际效果"></td>
-<td width="50%"><img src="docs/images/normal-dessert-demo.png" alt="甜品投喂实际效果"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/normal-bbq-demo.png" alt="烤肉投喂实际效果"></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/normal-dessert-demo.png" alt="甜品投喂实际效果"></td>
 </tr>
 </table>
 
 图片取自实际案例。示例使用自定义角色与人格，实际效果随你的设置变化。
 
-**[查看更多案例：表情包食物识别与非食物回应](docs/EXAMPLES.md)**
+**[查看更多案例：表情包食物识别与非食物回应](https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/docs/EXAMPLES.md)**
 
 ## ✨ 功能
 
@@ -196,9 +196,9 @@ python -m pip install -r data/plugins/astrbot_plugin_feeding/requirements.txt
 
 ## 📚 进一步阅读
 
-- [更多投喂效果](docs/EXAMPLES.md)
-- [完整配置、数据目录与环境说明](docs/CONFIGURATION.md)
-- [更新记录](CHANGELOG.md)
+- [更多投喂效果](https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/docs/EXAMPLES.md)
+- [完整配置、数据目录与环境说明](https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/docs/CONFIGURATION.md)
+- [更新记录](https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/CHANGELOG.md)
 
 目前已验证 Windows 本地路径处理和 Linux/Docker 插件回归，尚未实测 macOS及其他消息适配器。识图、内容分类和绘图均可能出错；插件仅供娱乐。
 
