@@ -71,7 +71,7 @@
 ZIP 导入省去了 AstrBot 下载仓库的步骤；安装 Python 依赖和调用模型仍需相应网络连接。
 
 <details>
-<summary>方式四：手动放入插件目录（适合本地部署或 Docker / NAS）</summary>
+<summary>手动放入插件目录（适合本地部署或 Docker / NAS）</summary>
 
 找到当前 AstrBot 实例实际使用的 `data/plugins` 目录，将下载的源码解压到其中，并将插件文件夹命名为 `astrbot_plugin_feeding`。目录结构应为：
 
