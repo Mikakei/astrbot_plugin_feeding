@@ -5,7 +5,7 @@
   <p>
     <img src="docs/images/badge-framework.svg" alt="Framework: AstrBot" />
     <img src="docs/images/badge-version.svg" alt="Version: v1.0.0" />
-    <a href="LICENSE"><img src="docs/images/badge-license.svg" alt="License: AGPL-3.0-only" /></a>
+    <a href="LICENSE"><img src="docs/images/badge-license.svg" alt="License: AGPL-3.0" /></a>
     <img src="docs/images/badge-astrbot.svg" alt="AstrBot: ≥ 4.28.1" />
     <img src="docs/images/badge-platform.svg" alt="Platform: OneBot v11" />
   </p>

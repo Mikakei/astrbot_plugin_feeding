@@ -100,4 +100,4 @@
 python -m unittest discover -s astrbot_plugin_feeding/tests
 ```
 
-测试模拟模型与发送接口，不调用真实付费模型。项目代码采用 AGPL-3.0-only，作者为 Mikakei。不要将用户上传图片、实例配置、备份或部署凭据加入仓库。
+测试模拟模型与发送接口，不调用真实付费模型。项目代码采用 AGPL-3.0，作者为 Mikakei。不要将用户上传图片、实例配置、备份或部署凭据加入仓库。
