@@ -4,7 +4,7 @@
   <p>把今天吃的东西分享给你的角色。</p>
   <p>
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-framework.svg" alt="Framework: AstrBot" />
-    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.0.0" />
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.0.1" />
     <a href="https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/LICENSE"><img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-license.svg" alt="License: AGPL-3.0" /></a>
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-astrbot.svg" alt="AstrBot: ≥ 4.28.1" />
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-platform.svg" alt="Platform: OneBot v11" />
