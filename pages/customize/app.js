@@ -1,3 +1,7 @@
+// Classic script: sandboxed pages have an opaque origin, and some reverse
+// proxies omit the CORS headers required by external ES modules.
+(async () => {
+'use strict';
 const bridge=window.AstrBotPluginPage;
 const $=id=>document.getElementById(id);
 const labels={reply_received:'收到投喂',reply_multiple:'收到多张图片（追加提示）',reply_pending:'同一用户已有任务',reply_busy:'队列已满',reply_cooldown:'投喂间隔过短',reply_malicious:'恶意投喂兜底回复',reply_non_food:'非食物兜底回复',reply_done:'完成投喂兜底回复'};
@@ -23,3 +27,4 @@ $('reload').onclick=()=>{if(!dirty||confirm('重新载入会丢弃尚未保存�
 $('editor').onsubmit=async e=>{e.preventDefault();if(busy||!loaded)return;const settings={...state.settings};for(const key of ['character_prompt','review_prompt',...Object.keys(labels)])settings[key]=$(key).value;busy=true;controls();status('正在保存…');try{state=await bridge.apiPost('customization/save',{revision:state.revision,settings});render();dirty=false;status('已保存，对后续投喂生效。')}catch(e){status('保存失败：'+e.message,true)}finally{busy=false;controls()}};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 try{if(!bridge)throw new Error('请从 AstrBot 插件页面打开此页面');const context=await bridge.ready();document.body.classList.toggle('dark',!!context.isDark);bridge.onContext(c=>document.body.classList.toggle('dark',!!c.isDark));await load()}catch(e){status(e.message,true)}
+})();
