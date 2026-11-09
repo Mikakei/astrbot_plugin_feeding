@@ -89,6 +89,8 @@ def validate_roles(roles, root):
         if not isinstance(role['id'], str) or not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}', role['id']) or role['id'] in ids:
             raise ValueError('角色 ID 无效或重复。')
         name = role['name']
+        if name in ('角色', '状态'):
+            raise ValueError('“角色”和“状态”是投喂指令保留字，请使用其他角色名称。')
         if not isinstance(name, str) or not 1 <= len(name) <= 40 or any(c.isspace() or ord(c) < 32 for c in name) or name in names:
             raise ValueError('角色名称须唯一，1–40字，不能含空格或换行。')
         ids.add(role['id']); names.add(name)

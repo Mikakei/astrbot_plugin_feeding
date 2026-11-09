@@ -4,7 +4,7 @@
   <p>把今天吃的东西分享给你的角色。</p>
   <p>
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-framework.svg" alt="Framework: AstrBot" />
-    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.1.0" />
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.1.1" />
     <a href="https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/LICENSE"><img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-license.svg" alt="License: AGPL-3.0" /></a>
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-astrbot.svg" alt="AstrBot: ≥ 4.28.1" />
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-platform.svg" alt="Platform: OneBot v11" />
@@ -207,13 +207,13 @@ python -m pip install -r data/plugins/astrbot_plugin_feeding/requirements.txt
 同条附带食物图片，或回复一条食物图片发送：
 
 ```text
-#投喂角色 角色A
-#投喂角色 角色A 这份是给你的，慢慢吃
+#投喂角色A
+#投喂角色A 这份是给你的，慢慢吃
 ```
 
 管理员指定不受随机开关和概率影响，但角色必须已启用且配置完整，仍遵循黑名单、冷却、队列及食物检查。每次仍只占用一次任务，抢饭不额外扣额度；管理员的每日额度豁免继续生效。
 
-早期测试指令 `#投喂大肥鱼` 保留兼容，仅指定名称为“大肥鱼”的角色；新角色统一使用 `#投喂角色 角色名`。命令前缀跟随 AstrBot 设置。
+所有角色统一使用“投喂＋角色名”，例如 `#投喂大肥鱼`、`#投喂千小妹`，保存角色后即可使用。`#投喂角色 角色名` 的写法仍兼容。名称“角色”和“状态”为指令保留字，请勿使用。命令前缀跟随 AstrBot 设置。
 
 ## 🎨 模型推荐与等待时间
 

@@ -22,6 +22,7 @@ from .core import (FeedingError, Journal, discover_models, generate_image, feedi
 from .connections import resolve_image_credentials, migrate_connection_config
 from .customization import DEFAULTS, customization, revision, validate_settings
 from .guests import migrate_guests, choose_guest, available, reference_valid, DEFAULT_NOTICE, initialize_default_guest
+from .guest_commands import GuestShortcutFilter, parse_shortcut
 
 
 VERSION = str(yaml.safe_load(Path(__file__).with_name('metadata.yaml').read_text(encoding='utf-8'))['version']).removeprefix('v')
@@ -259,6 +260,18 @@ class FeedingPlugin(Star):
             await event.send(event.plain_result('只有 AstrBot 管理员可以指定抢饭角色。'))
             return
         await self.feed_request(event, force_guest=True, guest_name='大肥鱼')
+
+    @filter.custom_filter(GuestShortcutFilter)
+    async def feed_shortcut_guest(self, event: AstrMessageEvent):
+        parsed = parse_shortcut(event.get_message_str())
+        if parsed is None:
+            return
+        event.stop_event()
+        if not event.is_admin():
+            await event.send(event.plain_result('只有 AstrBot 管理员可以指定抢饭角色。'))
+            return
+        name, note = parsed
+        await self.feed_request(event, force_guest=True, guest_name=name, note_override=note)
 
     @filter.command('投喂角色')
     async def feed_named_guest(self, event: AstrMessageEvent):

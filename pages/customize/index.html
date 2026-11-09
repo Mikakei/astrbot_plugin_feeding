@@ -11,6 +11,6 @@
 <p id="mode-help"></p><div id="total-field"><label for="steal_probability">抢饭发生概率（%）</label><input type="number" min="0" max="100" step="any" id="steal_probability"></div>
 <div class="probability-preview"><h3>每次正常投喂，谁会出场？</h3><div id="probability-preview" aria-live="polite"></div><p id="probability-error" role="alert"></p></div>
 <p>每次独立随机，可能连续出现同一角色；不保证投喂100次恰好出现对应次数。关闭随机抢饭后，普通投喂全部由原角色出场。</p>
-<p>管理员可发送“命令前缀＋投喂角色＋角色名”并附带或引用食物图片，指定已启用且配置完整的角色。概率0%也能指定测试；黑名单、冷却、队列和食物检查仍然生效。</p>
+<p>管理员可发送“命令前缀＋投喂＋角色名”，例如 #投喂千小妹，并附带或引用食物图片，指定已启用且配置完整的角色。概率0%也能指定测试；黑名单、冷却、队列和食物检查仍然生效。</p>
 <div id="guest-list"></div><button type="button" id="add-guest" class="secondary">添加抢饭角色</button></section><section><h2>固定回复</h2><p>接收、排队等提示直接发送，不调用模型。拒绝或完成回复仅在模型未返回点评时使用。</p><div class="grid" id="replies"></div><button type="button" id="defaults" class="secondary">将固定回复重置为通用文案</button></section>
 </fieldset><footer><div id="status" role="status" aria-live="polite">正在载入…</div><div class="actions"><button type="button" id="reload" class="secondary">重新载入</button><button type="submit" id="save" disabled>保存修改</button></div></footer></form><p class="footnote">保存后对新投喂生效，不修改 AstrBot 人格。服务连接、权限与队列仍在插件常规配置中设置。</p></main><dialog id="confirm-dialog"><p id="confirm-message"></p><div class="actions"><button type="button" class="secondary" id="confirm-cancel">取消</button><button type="button" id="confirm-accept">确认</button></div></dialog><script defer src="./app.js"></script></body></html>

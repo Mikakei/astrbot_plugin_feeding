@@ -120,6 +120,23 @@ class PluginTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(event.sent),2)
             self.assertNotIn('never announce',event.sent)
 
+    async def test_dynamic_shortcut_uses_new_role_without_reload(self):
+        self.configure_guest()
+        self.plugin.config['guest_roles'][0]['name']='千小妹'
+        event=Event([Image.fromBase64(base64.b64encode(png()).decode())],text='投喂千小妹 这份给你')
+        with patch.object(self.plugin,'process',new_callable=AsyncMock) as process:
+            await self.plugin.feed_shortcut_guest(event)
+            await asyncio.gather(*self.plugin.tasks)
+            self.assertEqual(process.await_args.args[3],'这份给你')
+            self.assertTrue(process.await_args.args[4]['guest'])
+
+    async def test_dynamic_shortcut_rejects_non_admin(self):
+        event=Event(admin=False,text='投喂千小妹')
+        with patch.object(self.plugin,'sources',new_callable=AsyncMock) as source:
+            await self.plugin.feed_shortcut_guest(event)
+            source.assert_not_awaited()
+        self.assertIn('管理员',event.sent[-1])
+
     async def test_probability_boundaries_and_duplicate(self):
         self.configure_guest()
         for prob, expected in [(0, False), (100, True)]:
