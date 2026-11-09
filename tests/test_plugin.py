@@ -39,6 +39,111 @@ class Config(dict):
 
 
 class PluginTests(unittest.IsolatedAsyncioTestCase):
+    def configure_guest(self):
+        path = self.root / 'files/guest_reference/guest.png'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(png((25, 25)))
+        self.plugin.config.update(guest_reference=['files/guest_reference/guest.png'],
+                                  guest_persona='称呼用户为用户。才不是大肥鱼！',
+                                  guest_character_prompt='blue whale', cooldown_seconds=0)
+        self.plugin.config['guest_roles'] = [{
+            'id':'fish','name':'大肥鱼','enabled':True,'random_enabled':True,'probability':15,
+            'persona':'称呼用户为用户。才不是大肥鱼！','character_prompt':'blue whale',
+            'reference':['files/guest_reference/guest.png'],'secondary':[],'notice':'刚递过去，就被半路接走了……'}]
+
+    async def test_guest_command_admin_only_and_blacklist(self):
+        for admin in (False, True):
+            event = Event(admin=admin)
+            if admin: self.plugin.config['blocked_users'] = ['123']
+            with patch.object(self.plugin, 'sources', new_callable=AsyncMock) as source:
+                await self.plugin.feed_guest(event)
+                source.assert_not_awaited()
+            self.assertIn('暂时不收' if admin else '管理员', event.sent[-1])
+
+    async def test_forced_guest_replaces_reference_and_persona_without_extra_generation(self):
+        self.configure_guest()
+        self.plugin.config.update(steal_enabled=False, steal_probability=0)
+        event = Event([Image.fromBase64(base64.b64encode(png()).decode())], text='投喂大肥鱼 今天吃饭')
+        with patch('astrbot_plugin_feeding.main.generate_image', new_callable=AsyncMock, return_value=png()) as gen:
+            await self.plugin.feed_guest(event)
+            await asyncio.gather(*self.plugin.tasks)
+        gen.assert_awaited_once()
+        self.assertEqual(len(gen.await_args.args[4]), 2)
+        self.assertEqual(gen.await_args.args[4][0], png((25, 25)))
+        self.assertIn('redraw the face', gen.await_args.args[3])
+        call = self.context.llm_generate.await_args.kwargs
+        self.assertIn('才不是大肥鱼', call['system_prompt'])
+        self.assertIn('其他分类使用原角色人格', call['system_prompt'])
+        self.assertIn('眼睑开合与视线', call['system_prompt'])
+        self.assertNotIn('投喂大肥鱼', call['prompt'])
+        self.assertEqual(next(iter(self.plugin.journal.records.values()))['actor'], 'guest')
+
+    async def test_named_guest_uses_exact_name_and_preserves_note(self):
+        self.configure_guest()
+        self.plugin.config['guest_roles'][0]['name']='测试角色'
+        event=Event([Image.fromBase64(base64.b64encode(png()).decode())],text='投喂角色 测试角色 这份给你')
+        with patch.object(self.plugin,'process',new_callable=AsyncMock) as process:
+            await self.plugin.feed_named_guest(event)
+            await asyncio.gather(*self.plugin.tasks)
+            self.assertEqual(process.await_args.args[3],'这份给你')
+            self.assertTrue(process.await_args.args[4]['guest'])
+
+    async def test_guest_notice_waits_for_image_and_is_a_separate_message(self):
+        self.configure_guest()
+        started, release = asyncio.Event(), asyncio.Event()
+        event=Event([Image.fromBase64(base64.b64encode(png()).decode())])
+        async def draw(*args, **kwargs):
+            started.set()
+            await release.wait()
+            return png()
+        with patch('astrbot_plugin_feeding.main.generate_image',side_effect=draw):
+            await self.plugin.feed_guest(event)
+            await asyncio.wait_for(started.wait(),2)
+            self.assertEqual(len(event.sent),1)  # Existing receipt only, no spoiler.
+            self.plugin.config['guest_roles'][0]['notice']='later edit'
+            release.set()
+            await asyncio.gather(*self.plugin.tasks)
+        self.assertEqual(len(event.sent),3)
+        self.assertEqual(event.sent[1],'刚递过去，就被半路接走了……')
+        self.assertIsInstance(event.sent[2],list)
+        self.assertIsInstance(event.sent[2][-1],Image)
+
+    async def test_empty_notice_and_generation_failure_do_not_announce(self):
+        self.configure_guest()
+        for mid, failure in [('empty',False),('failure',True)]:
+            self.plugin.config['guest_roles'][0]['notice']='never announce' if failure else ''
+            event=Event([Image.fromBase64(base64.b64encode(png()).decode())],mid=mid)
+            with patch('astrbot_plugin_feeding.main.generate_image',new_callable=AsyncMock,
+                       return_value=png(),side_effect=RuntimeError('test') if failure else None):
+                await self.plugin.feed_guest(event)
+                await asyncio.gather(*self.plugin.tasks)
+            self.assertEqual(len(event.sent),2)
+            self.assertNotIn('never announce',event.sent)
+
+    async def test_probability_boundaries_and_duplicate(self):
+        self.configure_guest()
+        for prob, expected in [(0, False), (100, True)]:
+            self.plugin.config.update(steal_enabled=True, steal_probability=prob)
+            event = Event([Image.fromBase64(base64.b64encode(png()).decode())], mid=str(prob))
+            with patch.object(self.plugin, 'process', new_callable=AsyncMock) as process:
+                await self.plugin.feed(event)
+                await asyncio.gather(*self.plugin.tasks)
+                self.assertEqual(process.await_args.args[-1]['guest'], expected)
+                await self.plugin.feed(event)
+                process.assert_awaited_once()
+            for mid in self.plugin.journal.records: self.plugin.journal.finish(mid, 'done')
+
+    async def test_forced_guest_does_not_generate_for_non_food(self):
+        self.configure_guest()
+        self.context.llm_generate.return_value = SimpleNamespace(completion_text=json.dumps({
+            'verdict':'non_food','is_food':False,'description':'toy','reply':'不能吃','action':'','expression':''}))
+        event = Event([Image.fromBase64(base64.b64encode(png()).decode())])
+        with patch('astrbot_plugin_feeding.main.generate_image', new_callable=AsyncMock) as gen:
+            await self.plugin.feed_guest(event)
+            await asyncio.gather(*self.plugin.tasks)
+        gen.assert_not_awaited()
+        self.assertEqual(event.sent[-1], '不能吃')
+
     async def test_blacklist_precedes_image_lookup_for_all_users(self):
         self.plugin.config.update(admin_only=False, blocked_users=[' 123 '])
         for admin in (False, True):
@@ -363,13 +468,14 @@ class PluginTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.plugin.journal.records[mid]['status'],'interrupted')
 
     async def test_native_dropdown_populates_without_changing_selection(self):
+        initial_saves = self.plugin.config.saves
         self.plugin.config['image_model']='gpt-image-2'
         with patch('astrbot_plugin_feeding.main.discover_models',new_callable=AsyncMock,return_value=['gpt-5.6-sol','gpt-image-1.5','gpt-image-2']):
             await self.plugin.refresh_model_options()
         field=self.plugin.config.schema['image_model']
         self.assertEqual(field['options'],['gpt-image-1.5','gpt-image-2'])
         self.assertEqual(self.plugin.config['image_model'],'gpt-image-2')
-        self.assertEqual(self.plugin.config.saves,0)
+        self.assertEqual(self.plugin.config.saves,initial_saves)
         self.assertIn('2 个',field['hint'])
         self.assertFalse(hasattr(self.plugin,'models'))
 

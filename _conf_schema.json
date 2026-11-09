@@ -41,8 +41,8 @@
   "group_daily_limit": {
     "description": "每个群每日投喂次数",
     "type": "int",
-    "default": 10,
-    "hint": "每群独立计算，北京时间每日零点重置；0 表示不限次数。成功入队即计次，后续拒绝或失败也计次，重启不重置。AstrBot 管理员不占用额度，私聊不受此限制。"
+    "default": 30,
+    "hint": "每群独立，每天北京时间零点重置。每位用户在每个群内另有群上限20%的个人额度，向下取整且至少1次：群30次→每人6次，群50次→每人10次。管理员不消耗这两项额度，私聊不受限制；0表示群与个人均不限。成功入队即计次，后续失败也计次，重启保留记录。"
   },
   "blocked_users": {
     "description": "投喂用户黑名单",
@@ -214,5 +214,69 @@
     "default": "收到这份投喂了。",
     "description": "reply_done",
     "invisible": true
+  },
+  "steal_enabled": {
+    "type": "bool",
+    "default": false,
+    "description": "启用随机抢饭",
+    "hint": "开启后，普通投喂有机会由你配置的抢饭角色接走。关闭后，普通投喂使用原角色；管理员指定角色的测试指令仍可使用。请先在“角色与回复定制”页面上传抢饭角色参考图并填写人格。"
+  },
+  "steal_probability": {
+    "type": "float",
+    "default": 15,
+    "description": "抢饭发生概率（%）",
+    "hint": "平均分配模式下生效。例如填30，三个参与角色各有10%的出场概率，原角色70%。自定义模式下忽略此值，各角色概率在独立页面设置，合计不能超过100%。每次独立随机，不保证固定次数。"
+  },
+  "guest_reference": {
+    "type": "file",
+    "default": [],
+    "file_types": [
+      "png",
+      "jpg",
+      "jpeg",
+      "webp"
+    ],
+    "description": "抢饭角色参考图",
+    "invisible": true
+  },
+  "guest_persona": {
+    "type": "text",
+    "default": "",
+    "description": "抢饭角色人格",
+    "invisible": true
+  },
+  "guest_character_prompt": {
+    "type": "text",
+    "default": "",
+    "description": "抢饭角色外观补充",
+    "invisible": true
+  },
+  "guest_roles": {
+    "type": "list",
+    "default": [],
+    "invisible": true,
+    "description": "抢饭角色列表（在独立页面管理）"
+  },
+  "guest_roles_migrated": {
+    "type": "bool",
+    "default": false,
+    "invisible": true,
+    "description": "多角色迁移标记"
+  },
+  "steal_mode": {
+    "type": "string",
+    "default": "average",
+    "options": [
+      "average",
+      "custom"
+    ],
+    "description": "抢饭概率分配方式",
+    "hint": "average=平均分配，使用下方抢饭总概率；custom=自定义，各角色分别设置最终概率，总概率自动相加。推荐在角色与回复定制页面切换方式并查看结果。"
+  },
+  "default_guest_initialized": {
+    "type": "bool",
+    "default": false,
+    "invisible": true,
+    "description": "默认抢饭角色初始化标记"
   }
 }

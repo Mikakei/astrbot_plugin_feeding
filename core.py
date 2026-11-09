@@ -320,7 +320,7 @@ class Journal:
         return hashlib.sha256(value.encode()).hexdigest()
 
     def admit(self, message: str, user: str, cooldown: int, capacity: int, replies=None,
-              *, group: str = '', daily_limit: int = 10, admin: bool = False) -> str:
+              *, group: str = '', daily_limit: int = 30, admin: bool = False) -> str:
         from .customization import DEFAULTS
         replies = replies or DEFAULTS
         self.save()
@@ -343,6 +343,13 @@ class Journal:
                    if gid and r.get('quota_group') == gid and r.get('quota_day') == day)
         if gid and daily_limit > 0 and used >= daily_limit:
             raise FeedingError('今天在这里已经吃得够多啦，明天再给我带好吃的吧。')
+        if gid and daily_limit > 0:
+            personal_limit = max(1, daily_limit // 5)
+            personal_used = sum(1 for r in self.records.values()
+                                if r['user'] == uid and r.get('quota_group') == gid
+                                and r.get('quota_day') == day)
+            if personal_used >= personal_limit:
+                raise FeedingError('今天已经收了你好几份啦，留点胃口给大家，明天再来找我吧。')
         self.records[mid] = {'user': uid, 'at': now, 'status': 'queued',
                              'quota_group': gid, 'quota_day': day}
         self.save()

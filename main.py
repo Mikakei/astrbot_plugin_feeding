@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import shutil
 import time
 import uuid
@@ -20,6 +21,7 @@ from .core import (FeedingError, Journal, discover_models, generate_image, feedi
                    image_model_candidates, image_prompt, load_image, parse_food, normalize_image)
 from .connections import resolve_image_credentials, migrate_connection_config
 from .customization import DEFAULTS, customization, revision, validate_settings
+from .guests import migrate_guests, choose_guest, available, reference_valid, DEFAULT_NOTICE, initialize_default_guest
 
 
 VERSION = str(yaml.safe_load(Path(__file__).with_name('metadata.yaml').read_text(encoding='utf-8'))['version']).removeprefix('v')
@@ -33,9 +35,12 @@ class FeedingPlugin(Star):
         if migrate_connection_config(self.config):
             self.config.save_config()
         self.root = Path(StarTools.get_data_dir('astrbot_plugin_feeding'))
+        initialized = initialize_default_guest(self.config, self.root)
+        if migrate_guests(self.config) or initialized:
+            self.config.save_config()
         for folder in ('references', 'inputs', 'outputs'):
             (self.root / folder).mkdir(parents=True, exist_ok=True)
-        # Migrate existing instance assets once; new installs ship no character art.
+        # Migrate existing primary-character assets once; never restore removed uploads.
         if not self.config.get('reference_migration_done', False):
             for field, legacy in (('chibi_reference', 'chibi4.png'), ('turnaround_reference', 'turnaround.png')):
                 source = self.root / 'references' / legacy
@@ -67,7 +72,13 @@ class FeedingPlugin(Star):
 
     def page_data(self):
         settings = customization(self.config)
-        return {'settings': settings, 'revision': revision(settings), 'defaults': DEFAULTS}
+        return {'settings': settings, 'revision': revision(settings), 'defaults': DEFAULTS,
+                'guest_notice_default': DEFAULT_NOTICE,
+                'guest_availability': {r['id']: available(r, self.root) for r in settings['guest_roles']},
+                'guest_reference_validity': {r['id']: {
+                    'reference': reference_valid(r['reference'], self.root),
+                    'secondary': reference_valid(r['secondary'], self.root, optional=True)
+                } for r in settings['guest_roles']}}
 
     async def page_customization(self):
         return json_response(self.page_data())
@@ -94,7 +105,7 @@ class FeedingPlugin(Star):
             return json_response(self.page_data())
 
     async def page_upload_reference(self, role):
-        if role not in ('chibi_reference', 'turnaround_reference'):
+        if role not in ('chibi_reference', 'turnaround_reference', 'guest_reference'):
             return error_response('上传位置无效。', status_code=400)
         files = await request.files()
         upload = files.get('file')
@@ -207,8 +218,8 @@ class FeedingPlugin(Star):
             raise FeedingError(str(exc)) from None
 
     async def load_reference(self, name):
-        field = {'chibi4.png': 'chibi_reference', 'turnaround.png': 'turnaround_reference'}[name]
-        label = '角色主参考图' if field == 'chibi_reference' else '角色辅助参考图'
+        field = {'chibi4.png': 'chibi_reference', 'turnaround.png': 'turnaround_reference', 'guest.png': 'guest_reference'}[name]
+        label = '抢饭角色参考图' if field == 'guest_reference' else ('角色主参考图' if field == 'chibi_reference' else '角色辅助参考图')
         selected = self.config.get(field, [])
         if field == 'turnaround_reference' and selected == []:
             return None
@@ -239,6 +250,30 @@ class FeedingPlugin(Star):
 
     @filter.command('投喂')
     async def feed(self, event: AstrMessageEvent):
+        await self.feed_request(event)
+
+    @filter.command('投喂大肥鱼')
+    async def feed_guest(self, event: AstrMessageEvent):
+        event.stop_event()
+        if not event.is_admin():
+            await event.send(event.plain_result('只有 AstrBot 管理员可以指定抢饭角色。'))
+            return
+        await self.feed_request(event, force_guest=True, guest_name='大肥鱼')
+
+    @filter.command('投喂角色')
+    async def feed_named_guest(self, event: AstrMessageEvent):
+        event.stop_event()
+        if not event.is_admin():
+            await event.send(event.plain_result('只有 AstrBot 管理员可以指定抢饭角色。'))
+            return
+        parts = event.get_message_str().partition('投喂角色')[2].strip().split(maxsplit=1)
+        if not parts:
+            await event.send(event.plain_result('请填写角色名称，并附带或引用食物图片。'))
+            return
+        await self.feed_request(event, force_guest=True, guest_name=parts[0],
+                                note_override=parts[1] if len(parts) > 1 else '')
+
+    async def feed_request(self, event, force_guest=False, guest_name=None, note_override=None):
         event.stop_event()
         mid = None
         try:
@@ -253,6 +288,11 @@ class FeedingPlugin(Star):
             if not images:
                 await event.send(event.plain_result(f'请发送 {self.command_name(event)} 和一张食物图片，或回复食物图片发送该命令。'))
                 return
+            try:
+                profile = choose_guest(self.config, self.root, random.random(), guest_name if force_guest else None)
+            except ValueError as exc:
+                raise FeedingError(str(exc)) from None
+            guest = profile is not None
             settings = {
                 'customization': customization(self.config),
                 'credentials': self.credentials(),
@@ -262,11 +302,24 @@ class FeedingPlugin(Star):
                 'image_quality': str(self.config.get('image_quality', 'low')),
                 'vision_provider_id': str(self.config.get('vision_provider_id', '')).strip(),
                 'character_prompt': str(self.config.get('character_prompt', '')).strip()[:4000],
+                'guest': guest,
+                'guest_persona': profile['persona'] if profile else '',
+                'guest_notice': profile.get('notice', DEFAULT_NOTICE).strip() if profile else '',
             }
-            settings['references'] = [await self.load_reference('chibi4.png')]
-            secondary = await self.load_reference('turnaround.png')
-            if secondary is not None:
-                settings['references'].append(secondary)
+            if guest:
+                if not settings['guest_persona']:
+                    raise FeedingError('请先在角色与回复定制页面填写抢饭角色人格。')
+                settings['references'] = []
+                for source in profile['reference'] + profile['secondary']:
+                    settings['references'].append(await load_image(str((self.root / source).resolve()),
+                        max_bytes=10 * 1024 * 1024, max_pixels=20_000_000,
+                        local_roots=[self.root / 'files/guest_reference']))
+                settings['character_prompt'] = profile['character_prompt']
+            else:
+                settings['references'] = [await self.load_reference('chibi4.png')]
+                secondary = await self.load_reference('turnaround.png')
+                if secondary is not None:
+                    settings['references'].append(secondary)
             mid = self.journal.admit(
                 str(event.unified_msg_origin) + ':' + str(event.message_obj.message_id),
                 event.get_platform_id() + ':' + str(event.get_sender_id()),
@@ -275,14 +328,20 @@ class FeedingPlugin(Star):
                 settings['customization'],
                 group=(event.get_platform_id() + ':' + str(event.get_group_id()))
                       if event.get_group_id() else '',
-                daily_limit=max(0, int(self.config.get('group_daily_limit', 10))),
+                daily_limit=max(0, int(self.config.get('group_daily_limit', 30))),
                 admin=event.is_admin(),
             )
             if mid == 'duplicate':
                 return
+            self.journal.records[mid]['actor'] = 'guest' if guest else 'host'
+            if profile:
+                self.journal.records[mid]['guest_id'] = profile['id']
+            self.journal.save()
             self.cleanup()
             text = event.get_message_str().strip()
-            note = text.partition('投喂')[2].strip()[:500]
+            note = text.partition('投喂大肥鱼' if force_guest else '投喂')[2].strip()[:500]
+            if note_override is not None:
+                note = note_override[:500]
             extra = ' ' + settings['customization']['reply_multiple'] if len(images) > 1 else ''
             await event.send(event.plain_result(settings['customization']['reply_received'] + extra))
             task = asyncio.create_task(self.process(event, mid, images[0], note, settings))
@@ -317,9 +376,33 @@ class FeedingPlugin(Star):
                 stage = 'vision'
                 phase_started = time.monotonic()
                 persona = await self.persona_prompt(event)
+                if settings.get('guest'):
+                    persona = (
+                        '这是一次条件角色扮演投喂任务。先按任务规则独立判断食物是否合适。'
+                        '只有 verdict=food 且 is_food=true 时，使用下方抢饭角色人格，'
+                        '表现她抢先拿走原本递给另一位角色的食物；点评、动作、表情均属于抢饭角色。'
+                        '其他分类使用原角色人格拒绝或追问，不发生抢饭。'
+                        '不解释随机概率或后台机制，不混合两个角色外观，不编造原角色姓名。'
+                        '正常食物的抢饭点评先确定一个最突出的情绪瞬间，让 reply、action、expression 一致。'
+                        'expression 必须具体写出眼睑开合与视线、眉毛角度、嘴型和身体姿态，'
+                        '不能只写开心、可爱、微笑或脸红，也不能仅用鲸尾和手部动作代替面部变化。'
+                        '抢饭只是出场方式，不等于偷窃、做坏事或被抓包。默认自在地享用食物，'
+                        '优先从自然开心、期待、惊喜、满足、专注品尝中选择贴合情境的情绪，'
+                        '不必每次写借口、试探别人反应、护食或担心原角色回来。'
+                        '例如满足可闭眼弯眉、鼓腮咀嚼、肩膀放松；'
+                        '期待可眉毛轻扬、视线落在食物上、身体自然前倾；'
+                        '惊喜可双眼明亮、眉毛扬起、嘴巴自然张开；'
+                        '认真品尝可轻收眼睑、看着手里的食物、嘴唇轻抿或自然咀嚼。'
+                        '被用户取绰号而反驳时可蹙眉、脸颊鼓起、嘴巴忙着反驳；'
+                        '只有用户说明或明确情境提到偷偷拿走、被发现等，才采用侧目躲闪、'
+                        '不对称眉毛、心虚笑或狡黠护食，不要仅因发生抢饭就使用这些表情。'
+                        '以上只是情绪与表情的对应示例，'
+                        '根据用户说明与本次点评选择，不固定套用，不为换表情编造辣烫等食物性质。'
+                        '\n原角色人格：\n' + persona + '\n抢饭角色人格：\n' + settings['guest_persona']
+                    )
                 pid = settings['vision_provider_id']
                 pid = pid or await self.context.get_current_chat_provider_id(umo=event.unified_msg_origin)
-                task_prompt = feeding_prompt(note, settings['customization']['review_prompt'])
+                task_prompt = feeding_prompt(note, '' if settings.get('guest') else settings['customization']['review_prompt'])
                 response = await asyncio.wait_for(self.context.llm_generate(
                     chat_provider_id=pid, prompt=task_prompt, image_urls=[str(input_path)],
                     system_prompt=persona, contexts=[],
@@ -337,8 +420,26 @@ class FeedingPlugin(Star):
                 stage = 'generation'
                 phase_started = time.monotonic()
                 base, key = settings['credentials']
+                drawing_prompt = image_prompt(food, settings['character_prompt'], len(references) == 2)
+                if settings.get('guest'):
+                    drawing_prompt += (
+                        '\nFor this food-snatching scene, redraw the face for the expression and reaction above. '
+                        'The reference is an identity sheet, not a facial-pose template. '
+                        'Keep eye COLOR and character identity, but let eyelids, eyebrows, gaze direction, '
+                        'cheeks and mouth change visibly with the specific emotional moment. '
+                        'Do not copy the reference\'s wide-open sparkling eyes and small cheerful smile by default. '
+                        'Natural joy, anticipation, delighted surprise, relaxed closed-eye enjoyment and attentive tasting '
+                        'are all valid. Food-snatching does not automatically imply guilt or mischief. '
+                        'Use shifty side-eyes, asymmetric scheming brows or guilty smirks only when explicitly '
+                        'supported by the user situation, never as the default character face. '
+                        'Do not substitute blush, sparkles, tail movement '
+                        'or a changed hand pose for the requested facial expression. '
+                        'The eyes need not look at the camera; direct the gaze according to the reaction. '
+                        'Appearance notes specify stable anatomy and clothing, not a fixed facial expression. '
+                        'Render one coherent emotional moment, not a collage of several expressions.'
+                    )
                 raw = await generate_image(base, key, settings['image_model'],
-                    image_prompt(food, settings['character_prompt'], len(references) == 2), references + [food_image],
+                    drawing_prompt, references + [food_image],
                     timeout=settings['image_timeout'], size=settings['image_size'], quality=settings['image_quality'])
                 timings['generation'] = round(time.monotonic() - phase_started, 2)
                 output = self.root / 'outputs' / f'{mid}.png'
@@ -346,7 +447,13 @@ class FeedingPlugin(Star):
                 # Persist before sending so delivery failures cannot trigger another paid generation.
                 self.journal.finish(mid, 'generated')
                 stage = 'delivery'
-                await event.send(event.chain_result([Plain(food['reply'] or settings['customization']['reply_done']), Image.fromFileSystem(str(output))]))
+                fallback = '这份我先接走啦。' if settings.get('guest') else settings['customization']['reply_done']
+                # Announce only after generation has finished, immediately before the result.
+                # Keep the two platform messages separate; never announce while queued/drawing.
+                notice = settings.get('guest_notice', '') if settings.get('guest') else ''
+                if notice:
+                    await event.send(event.plain_result(notice))
+                await event.send(event.chain_result([Plain(food['reply'] or fallback), Image.fromFileSystem(str(output))]))
                 self.journal.finish(mid, 'done')
                 logger.info('Feeding complete task=%s', mid[:12])
         except asyncio.CancelledError:

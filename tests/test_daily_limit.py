@@ -18,7 +18,7 @@ class DailyLimitTests(unittest.TestCase):
         return self.journal.admit(mid, mid, 0, 100, **kwargs)
 
     def test_groups_and_admin_are_independent(self):
-        for i in range(10):
+        for i in range(30):
             self.admit(str(i), group='bot:A')
         with self.assertRaises(FeedingError):
             self.admit('overflow', group='bot:A')
@@ -58,3 +58,36 @@ class DailyLimitTests(unittest.TestCase):
         with self.assertRaises(FeedingError):
             self.journal.admit('second', 'second', 0, 1, group='B', daily_limit=1)
         self.admit('second', group='B', daily_limit=1)
+
+    def test_user_quota_is_per_group_and_persistent(self):
+        for i in range(6):
+            mid=self.journal.admit(str(i),'user',0,100,group='A')
+            self.journal.finish(mid,'done')
+        self.journal=Journal(self.path)
+        with self.assertRaisesRegex(FeedingError,'明天再来'):
+            self.journal.admit('seventh','user',0,100,group='A')
+        self.journal.admit('other-user','other',0,100,group='A')
+        mid=self.journal.admit('other-group','user',0,100,group='B')
+        self.journal.finish(mid,'done')
+        self.journal.admit('admin','user',0,100,group='A',admin=True)
+
+    def test_user_quota_midnight_and_rounding(self):
+        before=datetime(2026,11,9,15,59,59,tzinfo=timezone.utc).timestamp()
+        with patch('astrbot_plugin_feeding.core.time.time',return_value=before):
+            for i in range(6):
+                mid=self.journal.admit(str(i),'user',0,100,group='A',daily_limit=34)
+                self.journal.finish(mid,'failed')
+            with self.assertRaises(FeedingError):
+                self.journal.admit('seventh','user',0,100,group='A',daily_limit=34)
+        with patch('astrbot_plugin_feeding.core.time.time',return_value=before+1):
+            self.journal.admit('tomorrow','user',0,100,group='A',daily_limit=34)
+
+    def test_small_group_unlimited_and_private(self):
+        mid=self.journal.admit('small','user',0,100,group='small',daily_limit=3)
+        self.journal.finish(mid,'done')
+        with self.assertRaises(FeedingError):
+            self.journal.admit('small-again','user',0,100,group='small',daily_limit=3)
+        for group in ('unlimited',''):
+            for i in range(8):
+                mid=self.journal.admit(group+str(i),'user',0,100,group=group,daily_limit=0 if group else 30)
+                self.journal.finish(mid,'done')
