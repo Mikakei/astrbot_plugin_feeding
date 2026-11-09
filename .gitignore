@@ -13,3 +13,6 @@ inputs/
 outputs/
 backups/
 tasks.json
+
+# AstrBot runtime data created during local testing
+data/

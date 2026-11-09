@@ -39,6 +39,33 @@ class Config(dict):
 
 
 class PluginTests(unittest.IsolatedAsyncioTestCase):
+    async def test_blacklist_precedes_image_lookup_for_all_users(self):
+        self.plugin.config.update(admin_only=False, blocked_users=[' 123 '])
+        for admin in (False, True):
+            event = Event(admin=admin)
+            with patch.object(self.plugin, 'sources', new_callable=AsyncMock) as sources:
+                await self.plugin.feed(event)
+                sources.assert_not_awaited()
+            self.assertIn('暂时不收', event.sent[-1])
+        self.assertFalse(self.plugin.journal.records)
+
+    async def test_group_limit_is_wired_to_admission(self):
+        self.plugin.config.update(admin_only=False, cooldown_seconds=0, group_daily_limit=1)
+        with patch.object(self.plugin, 'process', new_callable=AsyncMock):
+            for mid, group, admin in [('1','A',False), ('2','A',False),
+                                      ('3','B',False), ('4','A',True)]:
+                event = Event([Image.fromBase64(base64.b64encode(png()).decode())], mid=mid, admin=admin)
+                event.group = group
+                await self.plugin.feed(event)
+                await asyncio.gather(*self.plugin.tasks)
+                if mid == '2':
+                    self.assertIn('明天', event.sent[-1])
+                else:
+                    # Mark complete to isolate daily quotas from active-task deduplication.
+                    for key in list(self.plugin.journal.records):
+                        self.plugin.journal.finish(key, 'done')
+            self.assertEqual(len(self.plugin.journal.records), 3)
+
     async def test_page_only_exposes_customization_and_saves_without_other_changes(self):
         from astrbot_plugin_feeding.customization import DEFAULTS
         self.plugin.config['advanced']={'image_api_key':'private-test-key'}

@@ -242,6 +242,10 @@ class FeedingPlugin(Star):
         event.stop_event()
         mid = None
         try:
+            blocked = {str(uid).strip() for uid in self.config.get('blocked_users', [])}
+            if str(event.get_sender_id()).strip() in blocked:
+                await event.send(event.plain_result('你的投喂我暂时不收了。'))
+                return
             if self.config.get('admin_only', True) and not event.is_admin():
                 await event.send(event.plain_result('当前投喂仅限 AstrBot 管理员使用。'))
                 return
@@ -269,6 +273,10 @@ class FeedingPlugin(Star):
                 max(0, int(self.config.get('cooldown_seconds', 60))),
                 self.concurrency + max(0, min(20, int(self.config.get('queue_size', 3)))),
                 settings['customization'],
+                group=(event.get_platform_id() + ':' + str(event.get_group_id()))
+                      if event.get_group_id() else '',
+                daily_limit=max(0, int(self.config.get('group_daily_limit', 10))),
+                admin=event.is_admin(),
             )
             if mid == 'duplicate':
                 return

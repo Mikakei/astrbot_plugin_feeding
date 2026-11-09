@@ -4,7 +4,7 @@
   <p>把今天吃的东西分享给你的角色。</p>
   <p>
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-framework.svg" alt="Framework: AstrBot" />
-    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.0.2" />
+    <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-version.svg" alt="Version: v1.0.3" />
     <a href="https://github.com/Mikakei/astrbot_plugin_feeding/blob/main/LICENSE"><img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-license.svg" alt="License: AGPL-3.0" /></a>
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-astrbot.svg" alt="AstrBot: ≥ 4.28.1" />
     <img src="https://raw.githubusercontent.com/Mikakei/astrbot_plugin_feeding/main/docs/images/badge-platform.svg" alt="Platform: OneBot v11" />
@@ -165,6 +165,8 @@ python -m pip install -r data/plugins/astrbot_plugin_feeding/requirements.txt
 | 项目 | 默认行为 |
 | --- | --- |
 | 使用权限 | 先遵循 AstrBot 原生权限流程，再应用插件 `admin_only` 限制 |
+| 每群每日额度 | 默认10次，可配置，0为不限；各群独立，北京时间零点重置，管理员不占额度 |
+| 用户黑名单 | 在插件配置中填写账号 ID，对所有群和私聊生效 |
 | 群聊白名单 | 由 AstrBot 统一管理，插件不另设白名单 |
 | 同时处理 | 所有群聊共享1个处理名额 |
 | 额外等待 | 3个任务，可配置 |

@@ -11,6 +11,7 @@ import json
 import socket
 import time
 import warnings
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -318,7 +319,8 @@ class Journal:
     def key(value: str) -> str:
         return hashlib.sha256(value.encode()).hexdigest()
 
-    def admit(self, message: str, user: str, cooldown: int, capacity: int, replies=None) -> str:
+    def admit(self, message: str, user: str, cooldown: int, capacity: int, replies=None,
+              *, group: str = '', daily_limit: int = 10, admin: bool = False) -> str:
         from .customization import DEFAULTS
         replies = replies or DEFAULTS
         self.save()
@@ -332,7 +334,17 @@ class Journal:
             raise FeedingError(replies['reply_busy'])
         if any(r['user'] == uid and time.time() - r['at'] < cooldown for r in self.records.values()):
             raise FeedingError(replies['reply_cooldown'])
-        self.records[mid] = {'user': uid, 'at': time.time(), 'status': 'queued'}
+        # Admission and quota reservation are synchronous, with no await in between.
+        # Store quota metadata alongside the task so restarts cannot reset the budget.
+        now = time.time()
+        day = datetime.fromtimestamp(now, timezone(timedelta(hours=8))).date().isoformat()
+        gid = self.key(group) if group and not admin else ''
+        used = sum(1 for r in self.records.values()
+                   if gid and r.get('quota_group') == gid and r.get('quota_day') == day)
+        if gid and daily_limit > 0 and used >= daily_limit:
+            raise FeedingError('今天在这里已经吃得够多啦，明天再给我带好吃的吧。')
+        self.records[mid] = {'user': uid, 'at': now, 'status': 'queued',
+                             'quota_group': gid, 'quota_day': day}
         self.save()
         return mid
 

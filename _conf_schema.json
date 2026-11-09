@@ -36,7 +36,19 @@
     "description": "仅允许 AstrBot 管理员使用投喂",
     "type": "bool",
     "default": true,
-    "hint": "开启后，只有通过 AstrBot 原生权限检查的管理员可投喂；关闭后不再增加插件权限限制。群聊白名单由 AstrBot 统一管理。"
+    "hint": "开启后仅 AstrBot 管理员可投喂。黑名单仍生效；群聊白名单由 AstrBot 统一管理。"
+  },
+  "group_daily_limit": {
+    "description": "每个群每日投喂次数",
+    "type": "int",
+    "default": 10,
+    "hint": "每群独立计算，北京时间每日零点重置；0 表示不限次数。成功入队即计次，后续拒绝或失败也计次，重启不重置。AstrBot 管理员不占用额度，私聊不受此限制。"
+  },
+  "blocked_users": {
+    "description": "投喂用户黑名单",
+    "type": "list",
+    "default": [],
+    "hint": "每项填写一个用户账号 ID（QQ 填 QQ 号，不填昵称）。对所有群和私聊生效；明确列入黑名单的管理员也不能投喂。"
   },
   "image_provider_id": {
     "description": "绘图连接提供商（读取 AstrBot 已配置的提供商）",
