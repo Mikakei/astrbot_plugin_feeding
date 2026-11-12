@@ -254,7 +254,13 @@ def transport_reference(raw: bytes) -> tuple[bytes, str, str]:
         if im.mode != 'RGB':
             return raw, 'png', 'image/png'
         buf = io.BytesIO()
-        im.save(buf, format='JPEG', quality=92, subsampling=0, optimize=True)
+        # Inputs are already normalized PNGs. libjpeg's optimized in-memory
+        # encoder can fail on detailed images ("Suspension not allowed here").
+        im.load()
+        try:
+            im.save(buf, format='JPEG', quality=92, subsampling=0, optimize=False)
+        except OSError:
+            return raw, 'png', 'image/png'
     encoded = buf.getvalue()
     return (encoded, 'jpg', 'image/jpeg') if len(encoded) < len(raw) * 0.9 else (raw, 'png', 'image/png')
 

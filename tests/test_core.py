@@ -2,6 +2,7 @@ import asyncio
 import base64
 import io
 import json
+import random
 import tempfile
 import unittest
 from pathlib import Path
@@ -22,6 +23,20 @@ def png(size=(32, 32)):
 
 
 class CoreTests(unittest.TestCase):
+    def test_high_entropy_transport_decodes_at_original_size(self):
+        size=(320,240)
+        source=Image.frombytes('RGB',size,random.Random(1001).randbytes(3*size[0]*size[1]))
+        buf=io.BytesIO();source.save(buf,'PNG')
+        encoded,extension,mime=transport_reference(buf.getvalue())
+        self.assertEqual((extension,mime),('jpg','image/jpeg'))
+        with Image.open(io.BytesIO(encoded)) as result:
+            result.load();self.assertEqual(result.size,size)
+
+    def test_optional_jpeg_encoder_failure_preserves_normalized_png(self):
+        original=png()
+        with patch.object(Image.Image,'save',side_effect=OSError('encoder failure')):
+            self.assertEqual(transport_reference(original),(original,'png','image/png'))
+
     def test_character_prompt_does_not_embed_private_identity(self):
         prompt=image_prompt({'description':'food','action':'eat','reply':'yum'})
         for private in ('Juzi', 'silver-white', 'pointed elf', 'orange flower', 'black sailor'):
